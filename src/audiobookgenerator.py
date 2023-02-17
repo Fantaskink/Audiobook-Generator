@@ -72,6 +72,7 @@ def get_tts(string, number):
 lines = get_book_lines()
 
 for line in lines:
-    get_tts(line, lines.index(line))
+    #get_tts(line, lines.index(line))
+    print(line)
 
-load_and_merge_mp3s()
+#load_and_merge_mp3s()
