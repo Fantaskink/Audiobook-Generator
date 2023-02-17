@@ -3,7 +3,6 @@ import os
 import requests
 from pydub import AudioSegment
 
-
 load_dotenv()
 
 API_KEY = os.environ.get("API_KEY")
@@ -46,7 +45,7 @@ def get_book_lines():
         for line in file:
             if line != "\n":
                 lines.append(line.strip())
-
+                
     return lines
 
 
@@ -54,8 +53,8 @@ def get_tts(string, number):
     body = {
     "text": string,
     "voice_settings": {
-    "stability": 0.3,
-    "similarity_boost": 0.9
+    "stability": 0.4,
+    "similarity_boost": 0.85
         }
     }
     response = requests.post(url + f"/v1/text-to-speech/{voice_id}", headers=header, json=body)
@@ -72,8 +71,7 @@ def get_tts(string, number):
 
 lines = get_book_lines()
 
-for i in range(10,20):
-    #print(lines[i])
-    get_tts(lines[i], i)
+for line in lines:
+    get_tts(line, lines.index(line))
 
 load_and_merge_mp3s()
