@@ -40,20 +40,18 @@ def load_and_merge_mp3s():
     merged_audio.export(output_file, format='mp3')
 
 def get_book_lines():
-    lines = []
+    
     with open('./book/americanpsycho.txt', 'r') as file:
-        for line in file:
-            if line != "\n":
-                lines.append(line.strip())
-                
-    return lines
+        text = file.read()
+        text_list = text.split('\n\n')
+    return text_list
 
 
 def get_tts(string, number):
     body = {
     "text": string,
     "voice_settings": {
-    "stability": 0.4,
+    "stability": 0.5,
     "similarity_boost": 0.85
         }
     }
@@ -71,8 +69,10 @@ def get_tts(string, number):
 
 lines = get_book_lines()
 
-for line in lines:
-    #get_tts(line, lines.index(line))
-    print(line)
+for i in range(0,len(lines)):
+    #get_tts(lines[i], i)
+    print(lines[i])
+    print("\n")
+
 
 #load_and_merge_mp3s()
