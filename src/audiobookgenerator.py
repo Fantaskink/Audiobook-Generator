@@ -39,10 +39,27 @@ def load_and_merge_mp3s():
     output_file = os.path.join(directory, 'merged.mp3')
     merged_audio.export(output_file, format='mp3')
 
+def remove_newlines(string):
+    """
+    Remove occurrences of "\n\n" that aren't preceded by any of ".!?".
+    """
+    result = ''
+    for i in range(len(string)):
+        if i < len(string) - 1 and string[i] == '\n' and string[i+1] == '\n':
+            if i > 0 and string[i-1] in ".!?":
+                result += string[i]
+            elif i == 0:
+                result += string[i]
+        else:
+            result += string[i]
+    return result
+
+
 def get_book_lines():
     
     with open('./book/americanpsycho.txt', 'r') as file:
         text = file.read()
+        text = remove_newlines(text)
         text_list = text.split('\n\n')
     return text_list
 
@@ -74,5 +91,5 @@ for i in range(0,len(lines)):
     print(lines[i])
     print("\n")
 
-
+print(len(lines))
 #load_and_merge_mp3s()
