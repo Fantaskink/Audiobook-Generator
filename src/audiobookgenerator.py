@@ -1,7 +1,8 @@
 from dotenv import load_dotenv
 import os
 import requests
-from pydub import AudioSegment
+from PyPDF2 import PdfReader
+
 
 load_dotenv()
 
@@ -15,56 +16,54 @@ header = {
     "xi-api-key": API_KEY
 }
 
-def get_number(filename):
-    return int(filename.split('.')[0][-1])
-
-def load_and_merge_mp3s():
-
-    directory = "./output"
-
-    # Get a list of all mp3 files in the directory
-    files = [f for f in os.listdir(directory) if f.endswith('.mp3')]
-
-    # Sort the files based on the number at the end of their filename
-    files.sort(key=lambda x: int(x.split('.')[0][-1]))
-
-    # Load the audio segments
-    audio_segments = [AudioSegment.from_file(os.path.join(directory, f), format='mp3') for f in files]
-
-    # Concatenate the audio segments into a single audio file
-    merged_audio = audio_segments[0]
-    for audio_segment in audio_segments[1:]:
-        merged_audio = merged_audio + audio_segment
-
-    output_file = os.path.join(directory, 'merged.mp3')
-    merged_audio.export(output_file, format='mp3')
-
-def remove_newlines(string):
-    """
-    Remove occurrences of "\n\n" that aren't preceded by any of ".!?".
-    """
-    result = ''
-    for i in range(len(string)):
-        if i < len(string) - 1 and string[i] == '\n' and string[i+1] == '\n':
-            if i > 0 and string[i-1] in ".!?":
-                result += string[i]
-            elif i == 0:
-                result += string[i]
-        else:
-            result += string[i]
-    return result
-
-
 def get_book_lines():
+    reader = PdfReader('book/Bret Easton Ellis - American Psycho  -Vintage (1991).pdf')
+    number_of_pages = len(reader.pages)
+
+    extracted_pages = []
+    lines = []
+
+    for page in reader.pages:
+        extracted_text = page.extract_text()
+        split_text = extracted_text.split('\n')
+        extracted_pages.append(split_text)
     
-    with open('./book/americanpsycho.txt', 'r') as file:
-        text = file.read()
-        text = remove_newlines(text)
-        text_list = text.split('\n\n')
-    return text_list
+    for page in extracted_pages:
+        for line in page:
+            lines.append(line)
+    
+    return lines
+
+def merge_strings(strings):
+    i = 0
+    while i < len(strings) - 1:
+        if strings[i][-2:] not in [".", "!", "?"] and strings[i][-1].isspace():
+            merged_string = strings[i][:-1] + strings[i+1]
+            if strings[i][-1] == ' ' or strings[i+1][0] == ' ':
+                merged_string = strings[i][:-1] + ' ' + strings[i+1]
+            strings[i] = merged_string
+            strings.pop(i+1)
+        else:
+            i += 1
+    return strings
 
 
-def get_tts(string, number):
+
+def write_text_file(lines):
+    # Open the file in write mode with truncate
+    file = open("output/book/americanpsycho.txt", "w")
+
+    # Write some strings to the file
+    for line in lines:
+        file.write(line + '\n')
+        
+
+    # Close the file when finished
+    file.close()
+
+
+def get_tts(string, line_count):
+    digit_count = len(str(line_count))
     body = {
     "text": string,
     "voice_settings": {
@@ -72,24 +71,25 @@ def get_tts(string, number):
     "similarity_boost": 0.85
         }
     }
+    
     response = requests.post(url + f"/v1/text-to-speech/{voice_id}", headers=header, json=body)
 
     # Check if the request was successful
     if response.status_code == 200:
         # Open a file to write the audio content
-        with open(f'./output/line{i}.mp3', 'wb') as f:
+        with open(f'./output/audio/line{i:0{digit_count}d}.mp3', 'wb') as f:
             # Write the audio content to the file
             f.write(response.content)
-        print('Audio file saved successfully!')
+        print(f'Audio file {i} saved successfully!')
     else:
         print(f'Request failed with status code {response.status_code}')
 
 lines = get_book_lines()
+lines = merge_strings(lines)
+write_text_file(lines)
+line_count = len(lines)
 
-for i in range(0,len(lines)):
-    #get_tts(lines[i], i)
-    print(lines[i])
-    print("\n")
-
-print(len(lines))
-#load_and_merge_mp3s()
+for i in range(0,20):
+    get_tts(lines[i], line_count)
+    print(lines[i] + '\n')
+    
